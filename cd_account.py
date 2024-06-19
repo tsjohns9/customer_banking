@@ -14,4 +14,5 @@ def create_cd_account(balance, interest_rate, months):
         And returns the interest earned.
     """
 
-    pass
+    account = Account(balance, interest_rate)
+    return 0, 0
