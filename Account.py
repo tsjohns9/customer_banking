@@ -1,17 +1,21 @@
-""" Create a Account class with methods"""
+import datetime
+import math
+from typing import List
 
 
 class Account:
-    def __init__(self, balance, interest):
-        self.balance = balance
-        self.interest = interest
-        self.transactions = []
+    def __init__(self, pin: int, balance: float, interest_rate: float, months: int):
+        self.pin: int = pin
+        self.balance: float = balance
+        self.interest_rate: float = interest_rate
+        self.months = months
+        self.transactions: List[float] = []
 
     def set_balance(self, balance):
         self.balance = balance
 
-    def set_interest(self, interest):
-        self.interest = interest
+    def set_interest_rate(self, interest_rate):
+        self.interest_rate = interest_rate
 
     def deposit(self, amount):
         self.balance += amount
@@ -22,52 +26,42 @@ class Account:
     def display_balance(self):
         print(f"Account balance: ${self.balance:.2f}")
 
+    def calculate_interest() -> float:
+        pass
+
 
 class SavingsAccount(Account):
-    def __init__(self, pin, balance=0.0, interest_rate=0.01):
-        super().__init__(pin, balance)
+    def __init__(self, pin: int, balance: float, interest_rate: float, months: int):
+        super().__init__(pin, balance, interest_rate, months)
         self.interest_rate = interest_rate
 
-    def calculate_interest(self, years):
-        self.balance += self.balance * self.interest_rate * years
-        self.transactions.append(
-            (
-                "Interest",
-                self.balance * self.interest_rate * years,
-                datetime.datetime.now(),
-            )
+    def calculate_interest(self) -> float:
+        monthly_interest_rate = self.interest_rate / 12 / 100
+        return round_down(
+            self.balance * (1 + monthly_interest_rate) ** self.months - self.balance
         )
-        print(
-            f"Interest accrued over {years} year(s): ${self.balance * self.interest_rate * years:.2f}"
-        )
+
+    def withdraw(self):
+        pass
 
 
 class CDAccount(Account):
-    def __init__(self, pin, balance=0.0, interest_rate=0.03, term=1):
-        super().__init__(pin, balance)
+    def __init__(self, pin: int, balance: float, interest_rate: float, months: int):
+        super().__init__(pin, balance, interest_rate, months)
+        self.balance = balance
         self.interest_rate = interest_rate
-        self.term = term
         self.start_date = datetime.datetime.now()
-        self.maturity_date = self.start_date + datetime.timedelta(days=365 * self.term)
+        self.maturity_date = months
 
-    def calculate_interest(self):
-        if datetime.datetime.now() >= self.maturity_date:
-            self.balance += self.balance * self.interest_rate * self.term
-            self.transactions.append(
-                (
-                    "Interest",
-                    self.balance * self.interest_rate * self.term,
-                    datetime.datetime.now(),
-                )
-            )
-            print(
-                f"Interest accrued over {self.term} year(s): ${self.balance * self.interest_rate * self.term:.2f}"
-            )
-        else:
-            print(f"CD has not matured yet. Maturity date is {self.maturity_date}")
+    def calculate_interest(self) -> float:
+        monthly_interest_rate = self.interest_rate / 12 / 100
+        return round_down(
+            self.balance * (1 + monthly_interest_rate) ** self.months - self.balance
+        )
 
     def withdraw(self, amount):
-        if datetime.datetime.now() >= self.maturity_date:
-            super().withdraw(amount)
-        else:
-            print("Cannot withdraw funds before the maturity date")
+        pass
+
+
+def round_down(number):
+    return math.floor(number * 100) / 100

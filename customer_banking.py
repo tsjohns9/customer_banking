@@ -1,47 +1,110 @@
-from cd_account import create_cd_account
-from savings_account import create_savings_account
+import csv
+
+from Account import Account, CDAccount, SavingsAccount
 
 FAIL = "\033[91m"
 END = "\033[0m"
 SAVINGS = "savings"
 CD = "CD"
+csv_file_path = "./accounts.csv"
 
 opts = {
     1: SAVINGS,
     2: CD,
 }
-funcs = {
-    SAVINGS: create_savings_account,
-    CD: create_cd_account,
-}
+
 cd_months = {
     12: 4.35,
     24: 4.00,
-    36: 3.00,
-    48: 3.00,
+    36: 3.50,
+    48: 3.25,
     60: 3.00,
+}
+account_types = {
+    SAVINGS: SavingsAccount,
+    CD: CDAccount,
 }
 
 
 def main():
     print("Welcome to the banking app!")
+    accounts = read_accounts()
+    pin: int = None
+    if len(accounts) == 0:
+        pin = create_pin()
+
     account_type = select_account()
     balance = select_number(
         f"How much would you like to deposit into the {account_type}? ",
         float,
         "Balance",
     )
-    savings_maturity, interest = select_months_interest(account_type)
-    updated_balance, interest_earned = funcs[account_type](
-        balance,
-        interest,
-        savings_maturity,
-    )
-    print("updated_balance", updated_balance)
-    print("interest_earned", interest_earned)
+    months, interest_rate = select_months_interest(account_type)
+    account: Account = account_types[account_type](pin, balance, interest_rate, months)
+    interest_earned = account.calculate_interest()
+    updated_balance = account.balance + interest_earned
     print(
-        f"The interest earned for the {account_type} account is {interest_earned}% for {savings_maturity} months. The total balance is now {updated_balance}"
+        f"The interest earned for the {account_type} account will be ${interest_earned:,.2f} after {months} months. The total balance will be ${updated_balance:,.2f}"
     )
+
+    write_account(account, account_type, months)
+
+
+def read_accounts():
+    accounts = []
+    with open(csv_file_path, mode="r") as file:
+        reader = csv.reader(file)
+        next(reader)
+        for row in reader:
+            if len(row) == 0:
+                continue
+            if row[1] == "cd":
+                accounts.append(
+                    CDAccount(
+                        pin=row[0],
+                        balance=row[2],
+                        interest_rate=row[3],
+                        months=row[4],
+                    )
+                )
+            elif row[1] == "savings":
+                accounts.append(
+                    CDAccount(
+                        pin=row[0],
+                        balance=row[2],
+                        interest_rate=row[3],
+                        months=row[4],
+                    )
+                )
+    return accounts
+
+
+def write_account(account: Account, account_type: str, months: int):
+    with open(csv_file_path, mode="a", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(
+            [
+                account.pin,
+                account_type,
+                account.balance,
+                account.interest_rate,
+                account.months,
+            ]
+        )
+
+
+def create_pin() -> int:
+    while True:
+        pin = select_number(
+            "Please enter a 4 digit PIN to create an account: ",
+            int,
+            "PIN",
+        )
+        if pin < 1000:
+            print(f"\n{FAIL}PIN must be 4 digits.{END}\n")
+            continue
+        print("Save this pin so that you can log into your account next time.")
+        return pin
 
 
 def select_account():
@@ -70,7 +133,7 @@ def select_months_interest(account_type):
                 f"For a CD account, the following interest rates are available for the selected duration"
             )
             for count, (key, value) in enumerate(cd_months.items(), start=1):
-                print(f"{count}. {key} at {value}% APY")
+                print(f"{count}. {key} months at {value}% APY")
             choice = select_number(
                 f"Select the CD account you would like to open: ", int, "Interest rate"
             )
@@ -99,15 +162,11 @@ def select_number(prompt, type, input_name):
             else:
                 return balance
         except ValueError:
-            print_invalid_type(input_name, "number")
+            print(f"\n{FAIL}{input_name} must be a number.{END}\n")
 
 
 def print_invalid_value(key, value):
     print(f"\n{FAIL}{key} must be greater than {value}.{END}\n")
-
-
-def print_invalid_type(key, value):
-    print(f"\n{FAIL}{key} must be a {value}.{END}\n")
 
 
 if __name__ == "__main__":
