@@ -1,6 +1,9 @@
 import csv
+from typing import Dict
 
-from Account import Account, CDAccount, SavingsAccount
+from Account import Account
+from cd_account import CDAccount
+from savings_account import SavingsAccount
 
 FAIL = "\033[91m"
 END = "\033[0m"
@@ -8,19 +11,25 @@ SAVINGS = "savings"
 CD = "CD"
 csv_file_path = "./accounts.csv"
 
-opts = {
+opts: Dict[int, str] = {
     1: SAVINGS,
     2: CD,
 }
 
-cd_months = {
+savings_rates: Dict[int, float] = {
+    1: 0.01,
+    2: 0.02,
+    3: 0.03,
+}
+
+cd_months: Dict[int, float] = {
     12: 4.35,
     24: 4.00,
     36: 3.50,
     48: 3.25,
     60: 3.00,
 }
-account_types = {
+account_types: Dict[str, Account] = {
     SAVINGS: SavingsAccount,
     CD: CDAccount,
 }
@@ -28,11 +37,6 @@ account_types = {
 
 def main():
     print("Welcome to the banking app!")
-    accounts = read_accounts()
-    pin: int = None
-    if len(accounts) == 0:
-        pin = create_pin()
-
     account_type = select_account()
     balance = select_number(
         f"How much would you like to deposit into the {account_type}? ",
@@ -40,71 +44,12 @@ def main():
         "Balance",
     )
     months, interest_rate = select_months_interest(account_type)
-    account: Account = account_types[account_type](pin, balance, interest_rate, months)
+    account: Account = account_types[account_type](balance, interest_rate, months)
     interest_earned = account.calculate_interest()
     updated_balance = account.balance + interest_earned
     print(
         f"The interest earned for the {account_type} account will be ${interest_earned:,.2f} after {months} months. The total balance will be ${updated_balance:,.2f}"
     )
-
-    write_account(account, account_type, months)
-
-
-def read_accounts():
-    accounts = []
-    with open(csv_file_path, mode="r") as file:
-        reader = csv.reader(file)
-        next(reader)
-        for row in reader:
-            if len(row) == 0:
-                continue
-            if row[1] == "cd":
-                accounts.append(
-                    CDAccount(
-                        pin=row[0],
-                        balance=row[2],
-                        interest_rate=row[3],
-                        months=row[4],
-                    )
-                )
-            elif row[1] == "savings":
-                accounts.append(
-                    CDAccount(
-                        pin=row[0],
-                        balance=row[2],
-                        interest_rate=row[3],
-                        months=row[4],
-                    )
-                )
-    return accounts
-
-
-def write_account(account: Account, account_type: str, months: int):
-    with open(csv_file_path, mode="a", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow(
-            [
-                account.pin,
-                account_type,
-                account.balance,
-                account.interest_rate,
-                account.months,
-            ]
-        )
-
-
-def create_pin() -> int:
-    while True:
-        pin = select_number(
-            "Please enter a 4 digit PIN to create an account: ",
-            int,
-            "PIN",
-        )
-        if pin < 1000:
-            print(f"\n{FAIL}PIN must be 4 digits.{END}\n")
-            continue
-        print("Save this pin so that you can log into your account next time.")
-        return pin
 
 
 def select_account():
@@ -118,16 +63,29 @@ def select_account():
 
 
 def select_months_interest(account_type):
-    print("How many months will you have the {account_type} with this balance?")
+    print(
+        f"How many months will you have the {account_type} account with this balance?"
+    )
     while True:
         if account_type == SAVINGS:
             savings_maturity = select_number(
-                f"The interest rate is 0.01% APY for a savings account. Enter the number of months you will use the account. ",
+                f"Enter the number of months you will use the account. ",
                 int,
                 "Months",
             )
-            interest = 0.01
-            return savings_maturity, interest
+            for count, value in enumerate(savings_rates.values(), start=1):
+                print(f"{count}. {value}% APY")
+            choice = select_number(
+                f"Select the interest rate for the savings account ",
+                float,
+                "Interest rate",
+            )
+            if choice > len(savings_rates):
+                print(
+                    f"\n{FAIL}Please select a valid number between 1 and {len(savings_rates)}.{END}\n"
+                )
+                continue
+            return savings_maturity, savings_rates[choice]
         else:
             print(
                 f"For a CD account, the following interest rates are available for the selected duration"
@@ -139,7 +97,7 @@ def select_months_interest(account_type):
             )
             if choice > len(cd_months):
                 print(
-                    f"\n{FAIL}Please select a valid number between 1 and {len(cd_months)} {value}.{END}\n"
+                    f"\n{FAIL}Please select a valid number between 1 and {len(cd_months)}.{END}\n"
                 )
                 continue
 
