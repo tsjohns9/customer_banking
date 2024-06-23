@@ -8,5 +8,4 @@ class CDAccount(Account):
         super().__init__(balance, interest_rate, months)
         self.balance = balance
         self.interest_rate = interest_rate
-        self.start_date = datetime.datetime.now()
         self.maturity_date = months
