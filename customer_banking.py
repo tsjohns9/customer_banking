@@ -46,9 +46,11 @@ def main():
     months, interest_rate = select_months_interest(account_type)
     account: Account = account_types[account_type](balance, interest_rate, months)
     interest_earned = account.calculate_interest()
-    updated_balance = account.balance + interest_earned
+    account.set_balance(account.balance + interest_earned)
     print(
-        f"The interest earned for the {account_type} account will be ${interest_earned:,.2f} after {months} months. The total balance will be ${updated_balance:,.2f}"
+        f"The interest earned for the {account_type} account will be "
+        f"${interest_earned:,.2f} after {months} months. "
+        f"The total balance will be ${account.balance:,.2f}"
     )
 
 
