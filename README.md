@@ -8,5 +8,5 @@ The program will then calculate the interest earned based on the deposit, months
 
 Run the program
 ```python
-python create_cd_account
+python customer_banking.py
 ```
