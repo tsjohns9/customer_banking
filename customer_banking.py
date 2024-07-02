@@ -1,6 +1,5 @@
 from typing import Dict
 
-from Account import Account
 from cd_account import create_cd_account
 from savings_account import create_savings_account
 
